@@ -9,6 +9,10 @@ open_transactions = []
 owner = 'Theo'
 
 
+def hash_block(block):
+    return '-'.join([str(block[key]) for key in block])
+
+
 def get_last_blockchain_value():
     """Return the last value of the current blockchain"""
     if len(blockchain) < 1:
@@ -33,7 +37,7 @@ def add_transaction(recipient, sender=owner, amount=1.0):
 def mine_block():
     last_block = blockchain[-1]
     # list comprehention i.ex. [el * 2 for el in simple_list if el in calc_items]
-    hashed_block = '-'.join([str(last_block[key]) for key in last_block])
+    hashed_block = hash_block(last_block)
     print(hashed_block)
     # for key in last_block:
     #     value = last_block[key]
@@ -64,22 +68,13 @@ def print_blockchain_elements():
 
 
 def verify_chain():
-    block_index = 0
-    is_valid = True
-    for block in blockchain:
-        print('\nChecking block')
-        print('block 0: {0} is equal to {1}. Is that true?\n'.format(
-            str(block[0]), str(blockchain[block_index - 1])))
-        if block_index == 0:
-            block_index += 1
+    # Veridy the blockchain
+    for (index, block) in enumerate(blockchain):
+        if index == 0:
             continue
-        if block[0] == blockchain[block_index - 1]:
-            is_valid = True
-        else:
-            is_valid = False
-            break
-        block_index += 1
-    return is_valid
+        if block['previous_hash'] != hash_block(blockchain[index - 1]):
+            return False
+    return True
 
 
 while True:
