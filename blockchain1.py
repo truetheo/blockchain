@@ -102,14 +102,22 @@ while True:
     elif user_choice == 'h':
         # Make sure that I don't try to "hack" the blockchain if it's empty
         if len(blockchain) >= 1:
-            blockchain[0] = [2]
+            blockchain[0] = {
+                'previous_hash': '',
+                'index': 0,
+                'transactions': [{'sender': 'Magda',
+                                  'recipient': 'Theo',
+                                  'amount': 100.0}]
+            }
     elif user_choice == '2':
         print_blockchain_elements()
         print('\nThat was full blockchain!')
     else:
         print('input was invalid, please pick a value from the list!')
-    # if not verify_chain():
-    #     print('Invalid blockchain')
-    #     break
+    if not verify_chain():
+        print_blockchain_elements()
+        print('Invalid blockchain')
+        # leave loop
+        break
 print(blockchain)
 print('Done!')
