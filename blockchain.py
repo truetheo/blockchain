@@ -1,8 +1,8 @@
-import functools
-import hashlib
+# initializing out blockchain list
+from functools import reduce
+import hashlib as hl
 import json
 
-# initializing out blockchain list
 MINING_REWARD = 10
 
 genesis_block = {
@@ -18,9 +18,7 @@ paricipants = set(['Theo'])
 
 
 def hash_block(block):
-    # I take dictionary and transform it into a strin with json lib and str can be hashed by the haslib
-    # encode to make it binary
-    return hashlib.sha256(json.dumps(block).encode()).hexdigest()
+    return hl.sha256(json.dumps(block).encode()).hexdigest()
 
 
 def get_balance(paricipant):
@@ -29,16 +27,24 @@ def get_balance(paricipant):
     open_tx_sender = [tx['amount']
                       for tx in open_transactions if tx['sender'] == paricipant]
     tx_sender.append(open_tx_sender)
-    amount_sent = 0
-    for tx in tx_sender:
-        if len(tx) > 0:
-            amount_sent += tx[0]
+    # using lambda anonymous function
+    amount_sent = reduce(
+        lambda tx_sum, tx_amt: tx_sum + tx_amt[0] if len(tx_amt) > 0 else 0, tx_sender, 0)
+    # amount_sent = 0
+    # for tx in tx_sender:
+    #     if len(tx) > 0:
+    #         amount_sent += tx[0]
+    # this fetches received coin amounts of thransactions that were already in the blockchain
+    # We ignore open transactions becouse we shouldn't be able to spend coins before the transaction was confirmed and included in the blockchain.
     tx_recipient = [[tx['amount'] for tx in block['transactions']
                      if tx['recipient'] == paricipant] for block in blockchain]
-    amount_received = 0
-    for tx in tx_recipient:
-        if len(tx) > 0:
-            amount_received += tx[0]
+    amount_received = reduce(
+        lambda tx_sum, tx_amt: tx_sum + tx_amt[0] if len(tx_amt) > 0 else 0, tx_recipient, 0)
+    # amount_received = 0
+    # for tx in tx_recipient:
+    #     if len(tx) > 0:
+    #         amount_received += tx[0]
+    # return the balance
     return amount_received - amount_sent
 
 
@@ -57,7 +63,6 @@ def verify_transaction(transaction):
 
 def add_transaction(recipient, sender=owner, amount=1.0):
     """Append a new value as well as the last blockchain value to the block
-
     Arguments:
         :sender: The sender of the coins.
         :recipient: The recipient of the coins.
@@ -85,7 +90,7 @@ def mine_block():
         'recipient': owner,
         'amount': MINING_REWARD
     }
-    # copy a list in case transaction will be broadcasted. Range selector allows copy making [:]
+    # copy a list in case transaction will be broadcasted. Range selector allows copy making [:]. However this is shallow copy not Deep copy (nested elements)
     copied_transactions = open_transactions[:]
     copied_transactions.append(reward_transaction)
     block = {
@@ -124,12 +129,18 @@ def verify_chain():
     return True
 
 
+def verify_transactions():
+    # Check if all transaction are true // match the method requirements
+    return all([verify_transaction(tx) for tx in open_transactions])
+
+
 while True:
     print('Please choose')
     print('1: Add a new transaction value')
     print('2: Mine a new block')
     print('3: Output the blockchains')
     print('4: Output paritipants.')
+    print('5: Check transacions validity')
     print('h: Manipulate the chain')
     print('q: Quit')
     user_choice = get_user_choice()
@@ -149,8 +160,13 @@ while True:
         print_blockchain_elements()
     elif user_choice == '4':
         print('Current users of the blockchain: {0}.'.format(str(paricipants)))
+    elif user_choice == '5':
+        if verify_transactions():
+            print('All transactions are valid.')
+        else:
+            print('There are invalid transactions.')
     elif user_choice == 'q':
-        print('Option menu terminated...')
+        print('Program terminated...')
         break
     elif user_choice == 'h':
         # Make sure that I don't try to "hack" the blockchain if it's empty
@@ -172,7 +188,7 @@ while True:
         print('Invalid blockchain')
         # leave loop
         break
-    print('Balance: ', get_balance(owner))
+    print('Balance of {0}: {1:6.2f}.'.format(owner, get_balance(owner)))
 else:
     print('User left')
 
