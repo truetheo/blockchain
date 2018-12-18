@@ -1,3 +1,6 @@
+import functools
+import hashlib
+
 # initializing out blockchain list
 MINING_REWARD = 10
 
