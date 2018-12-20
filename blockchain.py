@@ -21,6 +21,22 @@ def hash_block(block):
     return hl.sha256(json.dumps(block).encode()).hexdigest()
 
 
+def valid_proof(transactions, last_hash, proof):
+    guess = (str(transactions) + str(last_hash) + str(proof)).encode()
+    guess_hash = hl.sha256(guess).hexdigest()
+    print(guess_hash)
+    return guess_hash[0:2] == '00'
+
+
+def proof_of_work():
+    last_block = blockchain[-1]
+    last_hash = hash_block(last_block)
+    proof = 0
+    while not valid_proof(open_transactions, last_hash, proof):
+        proof += 1
+    return proof
+
+
 def get_balance(paricipant):
     tx_sender = [[tx['amount'] for tx in block['transactions']
                   if tx['sender'] == paricipant] for block in blockchain]
@@ -84,7 +100,7 @@ def mine_block():
     last_block = blockchain[-1]
     # list comprehention i.ex. [el * 2 for el in simple_list if el in calc_items]
     hashed_block = hash_block(last_block)
-    print(hashed_block)
+    proof = proof_of_work()
     reward_transaction = {
         'sender': 'MINING',
         'recipient': owner,
@@ -96,7 +112,8 @@ def mine_block():
     block = {
         'previous_hash': hashed_block,
         'index': len(blockchain),
-        'transactions': copied_transactions
+        'transactions': copied_transactions,
+        'proof': proof
     }
     blockchain.append(block)
     return True
@@ -125,6 +142,9 @@ def verify_chain():
         if index == 0:
             continue
         if block['previous_hash'] != hash_block(blockchain[index - 1]):
+            return False
+        if not valid_proof(block['transactions'][:-1], block['previous_hash'], block['proof']):
+            print("Proof of work is invalid.")
             return False
     return True
 
